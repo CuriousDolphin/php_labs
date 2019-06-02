@@ -1,8 +1,6 @@
 <div class="sidebar-wrapper col-md-2">
   <nav class="sidebar">
-    <div class="sidebar-header">
-      <h3>Sidebar</h3>
-    </div>
+
     <!-- Links -->
     <ul class="nav flex-column">
       <?php

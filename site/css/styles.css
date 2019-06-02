@@ -43,7 +43,6 @@
 .table{
   width: auto;
   /*height: 50%;*/
-  background-color: #f8f9fa;
 }
 .row{
   
@@ -72,4 +71,14 @@
 }
 .navbar{
   z-index: 99999;
+}
+.prenoted{
+  background-color: yellow !important;
+}
+
+.buyed{
+  background-color: red;
+}
+.free{
+  background-color: green;
 }

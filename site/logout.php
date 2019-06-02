@@ -1,5 +1,5 @@
 <?php
-include('server.php');
+
 session_destroy();
 
 if (ini_get("session.use_cookies")) {
@@ -9,7 +9,6 @@ if (ini_get("session.use_cookies")) {
 
   //imposto il cookie nel passato,per farlo eliminare
 }
-echo 'You have been logged out. <a href="index.php">Go back</a>';
 header('HTTP/1.1 307 temporary redirect');
 header('Location: index.php');
 
