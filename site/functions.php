@@ -8,10 +8,11 @@ if (isset($_POST['api'])) {
   $cmd = $_POST['api'];
   switch ($cmd) {
     case 'getTickets':
+      $tickets = array();
+
       $db = dbConnection();
       $query = "SELECT * FROM tickets";
       $res = mysqli_query($db, $query);
-      $tickets = array();
       if ($res->num_rows > 0) {
 
         while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
@@ -54,6 +55,26 @@ if (isset($_POST['app_login'])) {
       array_push($errors, "Wrong email/password ");
     }
   }
+  mysqli_close($db);
+}
+function getTickets()
+{
+  $tickets = array();
+
+  $db = dbConnection();
+  $query = "SELECT * FROM tickets";
+  $res = mysqli_query($db, $query);
+  if ($res->num_rows > 0) {
+
+    while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
+      array_push($tickets, $row);
+    }
+    return $tickets;
+  } else {
+    mysqli_close($db);
+    return "[]";
+  }
+  mysqli_free_result($res);
   mysqli_close($db);
 }
 function checkHttps()

@@ -25,6 +25,10 @@
 .ml-16{
   margin-left:16px;
 }
+.margin-x{
+  margin-right: 8px;
+  margin-left:8px;
+}
 .margin-right {
   margin-right: 8px;
 }
@@ -73,12 +77,59 @@
   z-index: 99999;
 }
 .prenoted{
-  background-color: yellow !important;
+  background-color: #ffc107 ;
 }
 
 .buyed{
-  background-color: red;
+  background-color: #b71c1c;
 }
 .free{
-  background-color: green;
+  background-color: #8bc34a;
+}
+.no-margin{
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.card-text{
+  font-weight: 500;
+}
+.card-title{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-header{
+  border-radius: 25px 25px 0 0 !important;
+}
+.icon-white{
+  color: white;
+}
+.card{
+  border-radius: 25px;
+}
+.cell{
+      width: 30px;
+    height: 30px;
+}
+.label-wrapper{
+  display: flex;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-top: 20px;
+  font-weight: 500;
+}
+.label{
+  width: 30px;
+  text-align: center;
+  margin-left: 8px;
+   
+}
+.card-header {
+    padding: .75rem 1.25rem;
+    color: white;
+    margin-bottom: 0;
+    background-color: rgb(0, 123, 255);
+    border-bottom: 1px solid rgba(0,0,0,.125);
 }
