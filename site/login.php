@@ -52,6 +52,10 @@ if (isset($_SESSION['email'])) {
       </form>
       <div class="error-container container">
         <!-- ERRORS -->
+        <?php if (isset($_GET['msg'])) {
+
+          echo "<div class='alert alert-danger' role='alert'>Timeout Session expired,you need to login again</div>";
+        } ?>
 
         <?php if (count($errors) > 0) : ?>
           <?php echo "<div class='alert alert-danger' role='alert'>" ?>

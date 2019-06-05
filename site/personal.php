@@ -75,7 +75,7 @@ if (!isset($_SESSION['email'])) {
                 break;
               case 'purchased':
                 $purchased[$ticket['row']][$colConverted] = 'hidden';
-                $purchased++;
+                $npurchased++;
                 break;
               default:
                 break;
@@ -138,7 +138,8 @@ if (!isset($_SESSION['email'])) {
 
   </div>
   <script type="text/javascript">
-    myTickets = new Array();
+    myReservedTickets = new Array();
+    console.log('myReservedTickets', myReservedTickets);
     $('.clickable').click(
       function(event) {
 
@@ -149,7 +150,7 @@ if (!isset($_SESSION['email'])) {
         if (res) {
           place = res[1];
           row = res[2];
-          console.log('click!', row, place);
+
           reserve(row, place);
 
 
@@ -166,8 +167,9 @@ if (!isset($_SESSION['email'])) {
           api: "getTickets"
         }
       }).done(function(evt) {
+        myReservedTickets = new Array();
         var tickets = JSON.parse(evt);
-        console.log('tickets updated:', tickets);
+        console.log('--tickets updated:', tickets);
         var npurchased = 0;
         var nreserved = 0;
         $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
@@ -196,6 +198,8 @@ if (!isset($_SESSION['email'])) {
                   if (userMail === tickets[ind]['owner_email']) {
                     $(str).removeClass('free');
                     $(str).addClass('reserved-by-me');
+                    myReservedTickets.push(tickets[ind]);
+
                   } else {
                     $(str).removeClass('free');
                     $(str).addClass('reserved');
@@ -211,6 +215,7 @@ if (!isset($_SESSION['email'])) {
             }
           }
         }
+        console.log('myReservedTickets updates', myReservedTickets);
         var total = $('#n-total').text();
         $('#n-free').html(total - (nreserved + npurchased));
         $('#n-reserved').html(nreserved.toString());
@@ -230,16 +235,15 @@ if (!isset($_SESSION['email'])) {
           row: j,
         }
       }).done(function(evt) {
-        console.log('reserveaaaaaa', evt);
         res = JSON.parse(evt);
-
-        console.log('reserve result', JSON.parse(evt));
         if (res['error']) {
           console.log('error', res['error']);
           $('#alert').text(res['error']);
           $('#alert').removeClass('alert-success').addClass('alert-danger');
           $('#alert').stop().fadeIn().delay(1500).fadeOut('slow');
-
+          if (res['error'] = "timeout expired") {
+            window.location = 'login.php?msg=SessionTimeOut';
+          }
 
         }
         if (res['done']) {
@@ -250,9 +254,10 @@ if (!isset($_SESSION['email'])) {
           $('#alert').stop().fadeIn().delay(1500).fadeOut('slow');
 
 
-          mail = res['email']
-          getTickets(mail);
+
         }
+        mail = res['email']
+        getTickets(mail);
         //return JSON.parse(evt);
         //console.log(JSON.parse(evt));
       })

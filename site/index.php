@@ -65,7 +65,7 @@ if (isset($_SESSION['email'])) {
                 break;
               case 'purchased':
                 $purchased[$ticket['row']][$colConverted] = 'hidden';
-                $purchased++;
+                $npurchased++;
                 break;
               default:
                 break;
