@@ -26,6 +26,92 @@ if (isset($_POST['api'])) {
       mysqli_free_result($res);
       mysqli_close($db);
       break;
+    case 'reserve':
+      $db = dbConnection();
+      if (checkSession()) {  //user logged
+        if (isset($_POST['place']) && isset($_POST['row'])) {
+          $place = mysqli_real_escape_string($db, $_POST['place']);
+          $row = mysqli_real_escape_string($db, $_POST['row']);
+        } else {
+          $response['error']  = "wrong params";
+          echo json_encode($response);
+          break;
+        }
+
+
+        if ($row > $GLOBALS['row'] || $row < 0 || $place > $GLOBALS['col'] || $place < 0) {
+          $response['error']  = "seat not available";
+          echo json_encode($response);
+          break;
+        }
+
+
+
+        $query = "SELECT * FROM tickets WHERE row='$row' and place='$place' ";
+
+        $results = mysqli_query($db, $query);
+        mysqli_autocommit($db, false);
+        try {
+          if ($results->num_rows > 0) { //ticket already in db
+            if (isset($results['status'])) {
+              switch (strtolower($results['status'])) {
+                case 'purchased':
+                  $response['error']  = "ticket already purchased";
+                  echo json_encode($response);
+                  break;
+
+                case 'reserved':
+                  $email = mysqli_real_escape_string($db, $_SESSION['email']);
+                  $letter = strtolower($place);
+                  $label = chr($letter + 65); //genero le lettere
+
+                  $query = "UPDATE tickets SET owner_email = '$email' , status ='reserved' FROM tickets WHERE row='$row' and place='$label'";
+                  if (!mysqli_query($db, $query)) { // QUERY
+                    throw new Exception("Error Query update");
+                  }
+                  if (!mysqli_commit($db)) { //COMMIT
+                    throw new Exception("Error commit");
+                  }
+                  mysqli_autocommit($db, true);
+                  mysqli_close($db);
+                  $response['done']  = "ticket correctly reserved";
+                  $response['email']  = $email;
+                  echo json_encode($response);
+                  break;
+                default:
+                  break;
+              }
+            }
+          } else { //tickets not in db,insert
+            $email = mysqli_real_escape_string($db, $_SESSION['email']);
+            $letter = strtolower($place);
+            $label = chr($letter + 65); //genero le lettere
+            $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$label', 'reserved', '$email')";
+            if (!mysqli_query($db, $query)) { // QUERY
+              throw new Exception("Error Query insert");
+            }
+            if (!mysqli_commit($db)) { //COMMIT
+              throw new Exception("Error commit");
+            }
+            mysqli_autocommit($db, true);
+            mysqli_close($db);
+            $response['done']  = "ticket correctly inserted";
+            $response['email']  = $email;
+            echo json_encode($response);
+          }
+        } catch (Exception $e) {
+          mysqli_rollback($db);
+          mysqli_autocommit($db, true);
+          mysqli_close($db);
+          $error = $e->getMessage();
+          $response['error']  = $error;
+          echo json_encode($response);
+        }
+      } else {
+        $response['error']  = "timeout expired or user not logged";
+        echo json_encode($response);
+      }
+      break;
     default:
       break;
   }
@@ -57,6 +143,7 @@ if (isset($_POST['app_login'])) {
   }
   mysqli_close($db);
 }
+
 function getTickets()
 {
   $tickets = array();
@@ -104,11 +191,11 @@ function dbConnection()
   $db = mysqli_connect("localhost", "root", "");
   if (mysqli_connect_errno()) {
     array_push($errors, "database error ");
-    die("Internal server error" . mysqli_connect_errno());
+    exit("Internal server error" . mysqli_connect_errno());
   }
   if (!mysqli_select_db($db, "my_db")) {
     array_push($errors, "database error ");
-    die("Selection of DB error");
+    exit("Selection of DB error");
   }
   return $db;
 }
@@ -123,7 +210,7 @@ function checkSession()
   } else {
     $new = true;
   }
-  if ($new || ($diff > 120)) { // new or with inactivity period too long      
+  if ($new || ($diff > 10)) { // new or with inactivity period too long      
     $_SESSION = array();     // If it's desired to kill the session, also delete the session cookie.    
     // Note: This will destroy the session, and not just the session data!    
     if (ini_get("session.use_cookies")) { // PHP using cookies to handle session      
@@ -135,7 +222,6 @@ function checkSession()
     return false; // IMPORTANT to avoid further output from the script
   } else {
     $_SESSION['time'] = time(); /* update time */
-    echo '<html><body>Tempo ultimo accesso aggiornato: ' . $_SESSION['time'] . '</body></html>';
     return true;
   }
 }

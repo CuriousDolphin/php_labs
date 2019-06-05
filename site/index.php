@@ -3,6 +3,7 @@ include('functions.php');
 checkHttps();
 checkCookie();
 ?>
+
 <!doctype html>
 <html lang="en">
 

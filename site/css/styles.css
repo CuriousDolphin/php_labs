@@ -33,10 +33,12 @@
   margin-right: 8px;
 }
 .table-container{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+      display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    margin-top: 2rem;
+    overflow: auto;
 }
 .form-container{
   align-items: center;
@@ -46,6 +48,8 @@
 }
 .table{
   width: auto;
+    display: flex;
+    justify-content: center;
   /*height: 50%;*/
 }
 .row{
@@ -76,11 +80,14 @@
 .navbar{
   z-index: 99999;
 }
-.prenoted{
+.reserved{
   background-color: #ffc107 ;
 }
+.reserved-by-me{
+  background-color:yellow ;
+}
 
-.buyed{
+.purchased{
   background-color: #b71c1c;
 }
 .free{
@@ -94,6 +101,13 @@
 }
 .card-text{
   font-weight: 500;
+  font-weight: 500;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+}
+.hidden{
+  display: none;
 }
 .card-title{
   display: flex;
@@ -102,6 +116,13 @@
 }
 .card-header{
   border-radius: 25px 25px 0 0 !important;
+}
+.card-body{
+    width: 500px;
+  display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
 }
 .icon-white{
   color: white;
@@ -114,11 +135,12 @@
     height: 30px;
 }
 .label-wrapper{
-  display: flex;
   margin-left: 10px;
   margin-right: 10px;
   margin-top: 20px;
   font-weight: 500;
+  display: flex;
+  justify-content: center;
 }
 .label{
   width: 30px;
