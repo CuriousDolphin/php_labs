@@ -20,8 +20,9 @@ if (isset($_POST['api'])) {
         }
         echo json_encode($tickets);
       } else {
-        mysqli_close($db);
-        echo "[]";
+
+
+        echo json_encode("null");
       }
       mysqli_free_result($res);
       mysqli_close($db);
@@ -47,14 +48,20 @@ if (isset($_POST['api'])) {
 
 
 
-        $query = "SELECT * FROM tickets WHERE row='$row' and place='$place' ";
 
+
+
+
+        $letter = strtolower($place);
+        $label = chr($letter + 65); //genero le lettere
+        $query = "SELECT * FROM tickets WHERE row='$row' and place='$label'";
         $results = mysqli_query($db, $query);
         mysqli_autocommit($db, false);
         try {
-          if ($results->num_rows > 0) { //ticket already in db
-            if (isset($results['status'])) {
-              switch (strtolower($results['status'])) {
+          if (mysqli_num_rows($results) > 0) { //ticket already in db
+            $res = mysqli_fetch_array($results, MYSQLI_ASSOC);
+            if (isset($res['status'])) {
+              switch (strtolower($res['status'])) {
                 case 'purchased':
                   $response['error']  = "ticket already purchased";
                   echo json_encode($response);
@@ -62,40 +69,51 @@ if (isset($_POST['api'])) {
 
                 case 'reserved':
                   $email = mysqli_real_escape_string($db, $_SESSION['email']);
-                  $letter = strtolower($place);
-                  $label = chr($letter + 65); //genero le lettere
+                  if ($res['owner_email'] !== $email) {
+                    $query = "UPDATE tickets SET owner_email = '$email' , status ='reserved' WHERE row='$row' and place='$label'";
+                    if (!mysqli_query($db, $query)) { // QUERY
+                      throw new Exception("Error Query update $query");
+                    }
+                    if (!mysqli_commit($db)) { //COMMIT
+                      throw new Exception("Error commit");
+                    }
 
-                  $query = "UPDATE tickets SET owner_email = '$email' , status ='reserved' FROM tickets WHERE row='$row' and place='$label'";
-                  if (!mysqli_query($db, $query)) { // QUERY
-                    throw new Exception("Error Query update");
+                    $response['done']  = "reservation correctly update";
+                    $response['email']  = $email;
+                    echo json_encode($response);
+                  } else {
+                    $query = "DELETE FROM tickets WHERE row='$row' and place='$label'";
+                    if (!mysqli_query($db, $query)) { // QUERY
+                      throw new Exception("Error Query delete reservation");
+                    }
+                    if (!mysqli_commit($db)) { //COMMIT
+                      throw new Exception("Error commit");
+                    }
+                    $response['done']  = "reservation deleted by user";
+                    $response['email']  = $email;
+                    echo json_encode($response);
                   }
-                  if (!mysqli_commit($db)) { //COMMIT
-                    throw new Exception("Error commit");
-                  }
-                  mysqli_autocommit($db, true);
-                  mysqli_close($db);
-                  $response['done']  = "ticket correctly reserved";
-                  $response['email']  = $email;
-                  echo json_encode($response);
+
                   break;
                 default:
                   break;
               }
             }
+            mysqli_autocommit($db, true);
+            mysqli_close($db);
           } else { //tickets not in db,insert
             $email = mysqli_real_escape_string($db, $_SESSION['email']);
-            $letter = strtolower($place);
-            $label = chr($letter + 65); //genero le lettere
+
             $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$label', 'reserved', '$email')";
             if (!mysqli_query($db, $query)) { // QUERY
-              throw new Exception("Error Query insert");
+              throw new Exception("Error reservation insert");
             }
             if (!mysqli_commit($db)) { //COMMIT
               throw new Exception("Error commit");
             }
             mysqli_autocommit($db, true);
             mysqli_close($db);
-            $response['done']  = "ticket correctly inserted";
+            $response['done']  = "reservation correctly inserted";
             $response['email']  = $email;
             echo json_encode($response);
           }
@@ -108,8 +126,11 @@ if (isset($_POST['api'])) {
           echo json_encode($response);
         }
       } else {
-        $response['error']  = "timeout expired or user not logged";
+
+        $response['error']  = "timeout expired";
+        // redirect client to login page   
         echo json_encode($response);
+        header('Location: ' . 'login.php');
       }
       break;
     default:
@@ -159,7 +180,7 @@ function getTickets()
     return $tickets;
   } else {
     mysqli_close($db);
-    return "[]";
+    return $tickets;
   }
   mysqli_free_result($res);
   mysqli_close($db);
@@ -210,7 +231,7 @@ function checkSession()
   } else {
     $new = true;
   }
-  if ($new || ($diff > 10)) { // new or with inactivity period too long      
+  if ($new || ($diff > 120)) { // new or with inactivity period too long      
     $_SESSION = array();     // If it's desired to kill the session, also delete the session cookie.    
     // Note: This will destroy the session, and not just the session data!    
     if (ini_get("session.use_cookies")) { // PHP using cookies to handle session      
@@ -218,7 +239,7 @@ function checkSession()
       setcookie(session_name(), '', time() - 3600 * 24, $params["path"],       $params["domain"], $params["secure"], $params["httponly"]);
     }
     session_destroy();  // destroy session     
-    // redirect client to login page   
+
     return false; // IMPORTANT to avoid further output from the script
   } else {
     $_SESSION['time'] = time(); /* update time */
