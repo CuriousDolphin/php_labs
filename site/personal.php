@@ -185,7 +185,7 @@ if (!isset($_SESSION['email'])) {
 
           }
 
-        };
+        }
       )
 
       $('#buy').click(function() {
@@ -264,11 +264,13 @@ if (!isset($_SESSION['email'])) {
 
                   if (userMail === tickets[ind]['owner_email']) {
                     $(str).removeClass('free');
+                    $(str).removeClass('btn');
                     $(str).addClass('purchased');
                     myTickets.push(tickets[ind]);
 
                   } else {
                     $(str).removeClass('free');
+                    $(str).removeClass('btn');
                     $(str).addClass('purchased');
                   }
                   break;
@@ -336,13 +338,15 @@ if (!isset($_SESSION['email'])) {
             row: j,
           }
         }).done(function(evt) {
+          console.log(evt);
           res = JSON.parse(evt);
           if (res['error']) {
             console.log('error', res['error']);
             $('#alert').text(res['error']);
             $('#alert').removeClass('alert-success').addClass('alert-danger');
             $('#alert').finish().fadeIn().delay(1000).fadeOut();
-            if (res['error'] = "timeout expired") {
+            console.log('ecoooooolooo', res['error']);
+            if (res['error'] === "timeout expired") {
               window.location = 'login.php?msg=SessionTimeOut';
             }
 

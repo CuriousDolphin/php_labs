@@ -108,6 +108,7 @@ if (isset($_POST['api'])) {
         mysqli_close($db);
         $error = $e->getMessage();
         $response['error']  = $error;
+        $response['email']  = $_SESSION['email'];
         echo json_encode($response);
       }
 
@@ -140,13 +141,6 @@ if (isset($_POST['api'])) {
         echo json_encode($response);
         break;
       }
-
-
-
-
-
-
-
       $letter = strtolower($place);
       $label = chr($letter + 65); //genero le lettere
       $query = "SELECT * FROM tickets WHERE row='$row' and place='$label'";
@@ -158,9 +152,10 @@ if (isset($_POST['api'])) {
           if (isset($res['status'])) {
             switch (strtolower($res['status'])) {
               case 'purchased':
-                $response['error']  = "ticket already purchased";
-                echo json_encode($response);
-                //throw new Exception("ticket already purchased");
+                //$response['error']  = "ticket already purchased";
+                //echo json_encode($response);
+
+                throw new Exception("ticket already purchased");
                 break;
 
               case 'reserved':
@@ -220,10 +215,13 @@ if (isset($_POST['api'])) {
           echo json_encode($response);
         }
       } catch (Exception $e) {
+
+        $email = $_SESSION['email'];
         mysqli_rollback($db);
         mysqli_autocommit($db, true);
         mysqli_close($db);
         $error = $e->getMessage();
+        $response['email']  = $email;
         $response['error']  = $error;
         echo json_encode($response);
       }
