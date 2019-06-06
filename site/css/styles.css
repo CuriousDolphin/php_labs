@@ -7,11 +7,13 @@
   display: flex;
 }
 .sidebar-wrapper {
-    display: flex;
-    width: 100%;
+   display: flex;
+    width: 200px;
     align-items: stretch;
     background-color: #f8f9fa;
     height: 100%;
+    position: fixed;
+    z-index: 0;
 }
 .margin-left {
   margin-left: 8px;
@@ -37,7 +39,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    margin-top: 2rem;
+    margin-top: 1rem;
     overflow: auto;
 }
 .form-container{
@@ -118,10 +120,10 @@
   border-radius: 25px 25px 0 0 !important;
 }
 .card-body{
-    width: 500px;
-  display: flex;
-    flex-direction: column;
-    justify-content: center;
+       /* width: 500px; */
+    display: flex;
+    flex-direction: row;
+   /* justify-content: space-between;*/
     align-items: stretch;
 }
 .icon-white{
@@ -131,19 +133,18 @@
   border-radius: 25px;
 }
 .cell{
-      width: 30px;
-    height: 30px;
+  width: 20px;
+  height: 20px;
 }
 .label-wrapper{
   margin-left: 10px;
   margin-right: 10px;
-  margin-top: 20px;
   font-weight: 500;
   display: flex;
   justify-content: center;
 }
 .label{
-  width: 30px;
+  width: 24px;
   text-align: center;
   margin-left: 8px;
    
@@ -154,4 +155,32 @@
     margin-bottom: 0;
     background-color: rgb(0, 123, 255);
     border-bottom: 1px solid rgba(0,0,0,.125);
+}
+.btn{
+  cursor: pointer;
+  border: unset;
+}
+.stats{
+  
+  margin-bottom: 20px;
+}
+.my-stats{
+  margin-bottom: 20px;
+      display: flex;
+}
+.stats-container{
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  justify-content: space-around;
+  margin-left: 2rem;
+}
+
+
+
+.my-reservation{
+      display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }

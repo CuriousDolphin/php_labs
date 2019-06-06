@@ -27,6 +27,92 @@ if (isset($_POST['api'])) {
       mysqli_free_result($res);
       mysqli_close($db);
       break;
+    case 'buy':
+      if (!checkSession()) {
+        $response['error']  = "timeout expired";
+        echo json_encode($response);
+        exit();
+      }
+
+      if (!isset($_POST['tickets'])) {
+        $response['error']  = "no reservation for insert!";
+        echo json_encode($response);
+        exit();
+      }
+      $tickets = json_decode($_POST['tickets'], true);
+      $db = dbConnection();
+      mysqli_autocommit($db, false);
+      $maxRow = $GLOBALS['row'];
+      $maxCol = $GLOBALS['col'];
+      try {
+        foreach ($tickets as $ticket) {
+          if (isset($ticket['row'])  && isset($ticket['place'])) {
+
+            $row1 = intval($ticket['row']);
+            $letter = strtolower($ticket['place']);
+            $place  = ord($letter) - 97;
+            //check esistenza row e col
+            if (($row1 > $maxRow)  || ($row1 < 0) || ($place > $maxCol) || ($place < 0)) {
+              // throw new Exception("seat  $row1 $letter ($place) not available row:col=" . $maxRow . "____" . $maxRow);
+              throw new Exception("seat  $row1 $letter ($place)  row:col=" .  $maxRow . "____" . $maxCol);
+            }
+
+            $email = mysqli_real_escape_string($db, $_SESSION['email']);
+            $row = mysqli_real_escape_string($db, $row1);
+            $letter = mysqli_real_escape_string($db, $ticket['place']);
+            $query = "SELECT * from tickets where row='$row' and place='$letter'"; //cerco il ticket se esiste controllo che non sia stato acquistato,se non esiste lo acquisto
+            $res = mysqli_query($db, $query);
+            if (!$res) { // QUERY
+              throw new Exception("Error query search $query");
+            }
+
+            if ($res->num_rows > 0) { //posto prenotato o comprato
+              $tic = mysqli_fetch_array($res, MYSQLI_ASSOC);
+              $status = $tic['status'];
+
+              if (strtolower($status) === "purchased")
+                throw new Exception("Error seat already purchased $row");
+
+              //update biglietto
+              $query = "UPDATE tickets SET owner_email = '$email' , status ='purchased' WHERE row='$row' and place='$letter'";
+              $res = mysqli_query($db, $query);
+              if (!$res) { // QUERY
+                throw new Exception("Error query update place $query");
+              }
+              if (!mysqli_commit($db)) { //COMMIT
+                throw new Exception("Error commit");
+              }
+            } else { //POSTO LIBERO,LO compro
+              $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$letter', 'purchased', '$email')";
+              $res = mysqli_query($db, $query);
+              if (!$res) { // QUERY
+                throw new Exception("Error query insert place $query");
+              }
+              if (!mysqli_commit($db)) { //COMMIT
+                throw new Exception("Error commit");
+              }
+            }
+            mysqli_autocommit($db, true);
+          } else {
+            throw new Exception("bad input data");
+          }
+        }
+        mysqli_autocommit($db, true);
+        mysqli_close($db);
+        $response['done']  = "Done! Purchase correctly elaborated";
+        $response['email']  = $email;
+        echo json_encode($response);
+      } catch (Exception $e) {
+        mysqli_rollback($db);
+        mysqli_autocommit($db, true);
+        mysqli_close($db);
+        $error = $e->getMessage();
+        $response['error']  = $error;
+        echo json_encode($response);
+      }
+
+
+      break;
     case 'reserve':
 
       if (!checkSession()) {
@@ -74,6 +160,7 @@ if (isset($_POST['api'])) {
               case 'purchased':
                 $response['error']  = "ticket already purchased";
                 echo json_encode($response);
+                //throw new Exception("ticket already purchased");
                 break;
 
               case 'reserved':
@@ -89,6 +176,8 @@ if (isset($_POST['api'])) {
 
                   $response['done']  = "reservation correctly update";
                   $response['email']  = $email;
+                  $response['row'] = $row;
+                  $response['place'] = $label;
                   echo json_encode($response);
                 } else {
                   $query = "DELETE FROM tickets WHERE row='$row' and place='$label'";
@@ -100,6 +189,8 @@ if (isset($_POST['api'])) {
                   }
                   $response['done']  = "reservation deleted by user";
                   $response['email']  = $email;
+                  $response['row'] = $row;
+                  $response['place'] = $label;
                   echo json_encode($response);
                 }
 
@@ -124,6 +215,8 @@ if (isset($_POST['api'])) {
           mysqli_close($db);
           $response['done']  = "reservation correctly inserted";
           $response['email']  = $email;
+          $response['row'] = $row;
+          $response['place'] = $label;
           echo json_encode($response);
         }
       } catch (Exception $e) {

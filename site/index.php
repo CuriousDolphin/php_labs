@@ -53,8 +53,10 @@ if (isset($_SESSION['email'])) {
           $tickets = getTickets();
           $reserved = array();
           $purchased = array();
+          
           $nreserved = 0;
           $npurchased = 0;
+
           foreach ($tickets as $ticket) {
             $letter = strtolower($ticket['place']);
             $colConverted = ord($letter) - 97; //converte la lettera in nell'ascii corrispondente
@@ -71,6 +73,7 @@ if (isset($_SESSION['email'])) {
                 break;
             }
           }
+          echo "<div class='left-container'>";
           echo "<div class='label-wrapper'>";
           for ($j = 0; $j < $col; $j++) {
             $label = chr($j + 65); //genero le lettere
@@ -96,13 +99,18 @@ if (isset($_SESSION['email'])) {
             echo "</tr>";
           }
           echo "</table>";
+          echo "</div>";
 
           $total = $col * $row;
           $free = $total - ($nreserved + $npurchased);
+          echo "<div class='stats-container'>";
+          echo "<div class='stats'>";
           echo "<p class='card-text no-margin mb-1'>Total Seat: $total </p>";
           echo "<p class='card-text no-margin mb-1'> <span class='cell ml free mr-1' ></span > free: $free  </p>";
           echo "<p class='card-text no-margin mb-1'> <span class='cell ml reserved mr-1' ></span > reserved: $nreserved </p>";
           echo "<p class='card-text no-margin mb-1'><span class='cell ml purchased mr-1'></span > purchased: $npurchased </p>";
+          echo "</div>";
+          echo "</div>";
 
           ?>
 

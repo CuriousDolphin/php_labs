@@ -43,7 +43,7 @@ if (!isset($_SESSION['email'])) {
       <div class="card mb-3">
         <div class="card-header">
           <h5 class="card-title">Today Trip
-            <?php if (isset($_SESSION['email'])) {
+            <?php {
               echo "<button type='button' class='btn btn-link'><a class='icon-white' href='personal.php'><i class='fas fa-sync-alt'></i></a></button> ";
             } ?>
 
@@ -52,8 +52,8 @@ if (!isset($_SESSION['email'])) {
         <div class="card-body">
 
           <?php
-          if (isset($_SESSION['email']))
-            $myMail = $_SESSION['email'];
+
+          $myMail = $_SESSION['email'];
           $row = $GLOBALS['row'];
           $col = $GLOBALS['col'];
           $split = $col / 2;
@@ -62,25 +62,33 @@ if (!isset($_SESSION['email'])) {
           $purchased = array();
           $nreserved = 0;
           $npurchased = 0;
+          $reservedByMe = array();
+          $purchasedByMe = array();
           foreach ($tickets as $ticket) {
             $letter = strtolower($ticket['place']);
             $colConverted = ord($letter) - 97; //converte la lettera in nell'ascii corrispondente
+            $mail = strtolower($ticket['owner_email']);
             switch ($ticket['status']) {
               case 'reserved':
-                $mail = strtolower($ticket['owner_email']);
                 $reserved[$ticket['row']][$colConverted] = $mail;
                 $nreserved++;
-
+                if ($mail === $myMail) { //my reservation
+                  array_push($reservedByMe, $ticket);
+                }
                 // $filtered[$ticket['row']][$col];
                 break;
               case 'purchased':
                 $purchased[$ticket['row']][$colConverted] = 'hidden';
                 $npurchased++;
+                if ($mail === $myMail) { //my reservation
+                  array_push($purchasedByMe, $ticket);
+                }
                 break;
               default:
                 break;
             }
           }
+          echo "<div class='left-container'>";
           echo "<div class='label-wrapper'>";
           for ($j = 0; $j < $col; $j++) {
             $label = chr($j + 65); //genero le lettere
@@ -99,171 +107,264 @@ if (!isset($_SESSION['email'])) {
                 if (isset($reserved[$i][$j])) { //reserved
                   switch ($reserved[$i][$j]) {
                     case 'hidden': //reserved but not by me
-                      echo "<td class='cell ml reserved' id='i{$i}j{$j}'</td>";
+                      echo "<td class='cell ml reserved btn ' id='i{$i}j{$j}'</td>";
                       break;
 
                     default:
-                      if ($reserved[$i][$j] === $myMail)  echo "<td class='cell ml reserved-by-me clickable' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved by me -> yellow 
-                      else echo "<td class='cell ml reserved clickable' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved but not by me
+                      if ($reserved[$i][$j] === $myMail) {
+                        echo "<td class='cell ml reserved-by-me clickable btn ' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved by me -> yellow 
+
+                      } else echo "<td class='cell ml reserved clickable btn ' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved but not by me
 
                       break;
                   }
                 } else {
-                  echo "<td class='cell ml free clickable' id='i{$i}j{$j}'  ></td>"; //FREE
+                  echo "<td class='cell ml free clickable btn' id='i{$i}j{$j}'  ></td>"; //FREE
                 }
               }
             }
             echo "</tr>";
           }
           echo "</table>";
-
+          echo "</div>";
           $total = $col * $row;
           $free = $total - ($nreserved + $npurchased);
+
+          echo "<div class='stats-container'>";
+          echo "<div class='stats'>";
           echo "<p class='card-text no-margin mb-1'>Total Seat: <span id='n-total'> $total</span> </p>";
           echo "<p class='card-text no-margin mb-1 ' > <span class='cell ml free mr-1' ></span> free: <span id='n-free'> $free</span>  </p>";
           echo "<p class='card-text no-margin mb-1 ' ><span class='cell ml reserved mr-1' ></span> reserved: <span id='n-reserved'> $nreserved </span></p>";
           echo "<p class='card-text no-margin mb-1 ' ><span class='cell ml purchased mr-1'></span> purchased: <span id='n-purchased'>$npurchased </span></p>";
-
-          ?>
-
-          <?php if (isset($_SESSION['email'])) {
-            echo "<button type='button' class='btn btn-primary'>Buy</button>";
+          echo "</div>";
+          echo "<div class='my-stats'>";
+          echo "<p class='card-text no-margin mb-1 my-reservation'><i class='fas fa-shopping-cart mr-2'></i> Cart: <br>";
+          echo "<span id='reservation-list' class='ml-3'>";
+          foreach ($reservedByMe as $tmp) {
+            echo " " . $tmp['row'] . $tmp['place'];
           }
+          echo "</span></p></div>";
+          echo "<div class='my-stats'><p class='card-text no-margin mb-1 my-reservation'><i class='fas fa-dollar-sign'></i> Own: <br>";
+          echo "<span id='purchase-list' class='ml-3'>";
+          foreach ($purchasedByMe as $tmp) {
+            echo " " . $tmp['row'] . $tmp['place'];
+          }
+          echo "</span></p></div>";
+          if (count($reservedByMe) > 0)  echo "<button type='button' class='btn btn-primary' id='buy'>Buy</button>";
+          else echo "<button type='button' class='btn btn-primary hidden' id='buy'>Buy</button>";
+
+          echo "</div>";
+
           ?>
+
+
+          </>
         </div>
+
       </div>
       <div class='alert' role='alert' id='alert'></div>
+
     </div>
+    <script type="text/javascript">
+      myReservedTickets = new Array();
+      myTickets = new Array();
+      console.log('myReservedTickets', myReservedTickets);
+      $('.clickable').click(
+        function(event) {
+
+          id = event.target.id;
+          reg = '[i](\d+)[j](\d+)';
+          var patt = new RegExp("[i](.+)[j](.+)");
+          var res = patt.exec(id.toString()); //estraggo gli indici
+          if (res) {
+            place = res[1];
+            row = res[2];
+
+            reserve(row, place);
 
 
-  </div>
-  <script type="text/javascript">
-    myReservedTickets = new Array();
-    console.log('myReservedTickets', myReservedTickets);
-    $('.clickable').click(
-      function(event) {
+          }
 
-        id = event.target.id;
-        reg = '[i](\d+)[j](\d+)';
-        var patt = new RegExp("[i](.+)[j](.+)");
-        var res = patt.exec(id.toString()); //estraggo gli indici
-        if (res) {
-          place = res[1];
-          row = res[2];
+        };
+      )
 
-          reserve(row, place);
+      $('#buy').click(function() {
+          if (myReservedTickets.length < 0) {
+            $('#alert').text("You dont have reserved tickets");
+            $('#alert').removeClass('alert-success').addClass('alert-danger');
+            $('#alert').finish().fadeIn().delay(1000).fadeOut();
+            return;
+          }
+          console.log('invio al server', myReservedTickets);
+          $.ajax({
+            url: "functions.php",
+            type: "POST",
+            data: {
+              api: "buy",
+              tickets: JSON.stringify(myReservedTickets)
+            }
+          }).done(function(evt) {
+            console.log('buy result:', evt);
+            res = JSON.parse(evt);
+            if (res['error']) {
+              console.log('error', res['error']);
+              $('#alert').text(res['error']);
+              $('#alert').removeClass('alert-success').addClass('alert-danger');
+              $('#alert').finish().fadeIn().delay(1000).fadeOut();
+              /* if (res['error'] = "timeout expired") {
+                window.location = 'login.php?msg=SessionTimeOut';
+              } */
 
+            }
+            if (res['done']) {
+              console.log('done! purchased elaborated');
+              $('#alert').text(res['done']);
+              $('#alert').removeClass('alert-danger').addClass('alert-success');
+              $('#alert').finish();
+              $('#alert').fadeIn().delay(1000).fadeOut();
+            }
+            mail = res['email']
+            getTickets(mail);
+          })
 
         }
 
-      }
-    )
 
-    function getTickets(userMail) {
-      $.ajax({
-        url: "functions.php",
-        type: "POST",
-        data: {
-          api: "getTickets"
-        }
-      }).done(function(evt) {
-        myReservedTickets = new Array();
-        var tickets = JSON.parse(evt);
-        console.log('--tickets updated:', tickets);
-        var npurchased = 0;
-        var nreserved = 0;
-        $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
-        if (tickets !== "null") {
-          // console.log(evt);
-          var str, converted;
+      );
 
-          var ntot = tickets.lenght;
+      function getTickets(userMail) {
+        $.ajax({
+          url: "functions.php",
+          type: "POST",
+          data: {
+            api: "getTickets"
+          }
+        }).done(function(evt) {
+          myReservedTickets = new Array();
+          myTickets = new Array();
+          var tickets = JSON.parse(evt);
+          console.log('--tickets updated:', tickets);
+          var npurchased = 0;
+          var nreserved = 0;
+          $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
+          if (tickets !== "null") {
+            // console.log(evt);
+            var str, converted;
+
+            var ntot = tickets.lenght;
 
 
-          for (var ind in tickets) {
-            converted = tickets[ind].place.toString().toLowerCase().charCodeAt(0) - 97;
-            /* USED TO CONVERT CHAR TO NUMBER */
-            str = "#i" + tickets[ind].row + 'j' + converted;
-            switch (tickets[ind].status) {
-              case "purchased":
-                npurchased++;
-                $(str).removeClass('free');
+            for (var ind in tickets) {
+              converted = tickets[ind].place.toString().toLowerCase().charCodeAt(0) - 97;
+              /* USED TO CONVERT CHAR TO NUMBER */
+              str = "#i" + tickets[ind].row + 'j' + converted;
+              switch (tickets[ind].status) {
+                case "purchased":
+                  npurchased++;
 
-                $(str).addClass('purchased');
-                break;
-
-              case "reserved":
-                nreserved++;
-                if (userMail) { //reserved by me
                   if (userMail === tickets[ind]['owner_email']) {
                     $(str).removeClass('free');
-                    $(str).addClass('reserved-by-me');
-                    myReservedTickets.push(tickets[ind]);
+                    $(str).addClass('purchased');
+                    myTickets.push(tickets[ind]);
 
+                  } else {
+                    $(str).removeClass('free');
+                    $(str).addClass('purchased');
+                  }
+                  break;
+
+                case "reserved":
+                  nreserved++;
+                  if (userMail) { //reserved by me
+                    if (userMail === tickets[ind]['owner_email']) {
+                      $(str).removeClass('free');
+                      $(str).addClass('reserved-by-me');
+                      myReservedTickets.push(tickets[ind]);
+
+                    } else {
+                      $(str).removeClass('free');
+                      $(str).addClass('reserved');
+                    }
                   } else {
                     $(str).removeClass('free');
                     $(str).addClass('reserved');
                   }
-                } else {
-                  $(str).removeClass('free');
-                  $(str).addClass('reserved');
-                }
 
-                break;
-              default:
-                break;
+                  break;
+                default:
+                  break;
+              }
+
             }
           }
-        }
-        console.log('myReservedTickets updates', myReservedTickets);
-        var total = $('#n-total').text();
-        $('#n-free').html(total - (nreserved + npurchased));
-        $('#n-reserved').html(nreserved.toString());
-        $('#n-purchased').html(npurchased.toString());
-      });
-    }
+          str = '';
+          myTickets.forEach(function(ticket) {
+            str += " " + ticket['row'] + ticket['place'];
+          })
+          $('#purchase-list').html(str);
+          console.log('myPurchasedTickets updates', myTickets);
 
-    function reserve(i, j) {
-      console.log(i, j);
 
-      return $.ajax({
-        url: "functions.php",
-        type: "POST",
-        data: {
-          api: "reserve",
-          place: i,
-          row: j,
-        }
-      }).done(function(evt) {
-        res = JSON.parse(evt);
-        if (res['error']) {
-          console.log('error', res['error']);
-          $('#alert').text(res['error']);
-          $('#alert').removeClass('alert-success').addClass('alert-danger');
-          $('#alert').stop().fadeIn().delay(1500).fadeOut('slow');
-          if (res['error'] = "timeout expired") {
-            window.location = 'login.php?msg=SessionTimeOut';
+          str = '';
+          myReservedTickets.forEach(function(ticket) {
+            str += " " + ticket['row'] + ticket['place'];
+          })
+          if (str === '') str = 'empty';
+          $('#reservation-list').html(str);
+          console.log('myReservedTickets updates', myReservedTickets);
+          if (myReservedTickets.length > 0) {
+            $('#buy').removeClass('hidden');
+          } else {
+            $('#buy').addClass('hidden');
           }
+          var total = $('#n-total').text();
+          $('#n-free').html(total - (nreserved + npurchased));
+          $('#n-reserved').html(nreserved.toString());
+          $('#n-purchased').html(npurchased.toString());
+        });
+      }
 
-        }
-        if (res['done']) {
+      function reserve(i, j) {
+        console.log(i, j);
 
-          console.log('done! updating seats');
-          $('#alert').text(res['done']);
-          $('#alert').removeClass('alert-danger').addClass('alert-success');
-          $('#alert').stop().fadeIn().delay(1500).fadeOut('slow');
+        return $.ajax({
+          url: "functions.php",
+          type: "POST",
+          data: {
+            api: "reserve",
+            place: i,
+            row: j,
+          }
+        }).done(function(evt) {
+          res = JSON.parse(evt);
+          if (res['error']) {
+            console.log('error', res['error']);
+            $('#alert').text(res['error']);
+            $('#alert').removeClass('alert-success').addClass('alert-danger');
+            $('#alert').finish().fadeIn().delay(1000).fadeOut();
+            if (res['error'] = "timeout expired") {
+              window.location = 'login.php?msg=SessionTimeOut';
+            }
+
+          }
+          if (res['done']) {
+
+            console.log('done! updating seats');
+            $('#alert').text(res['row'] + res['place'] + " " + res['done']);
+            $('#alert').removeClass('alert-danger').addClass('alert-success');
+            $('#alert').finish();
+            $('#alert').fadeIn().delay(1000).fadeOut();
 
 
+          }
+          mail = res['email']
+          getTickets(mail);
+          //return JSON.parse(evt);
+          //console.log(JSON.parse(evt));
+        })
 
-        }
-        mail = res['email']
-        getTickets(mail);
-        //return JSON.parse(evt);
-        //console.log(JSON.parse(evt));
-      })
-
-    }
-  </script>
+      }
+    </script>
 </body>
 
 </html>
