@@ -232,7 +232,11 @@ if (!isset($_SESSION['email'])) {
 
       );
 
-      function getTickets(userMail) {
+      function getTickets(userMail, str, i, j) {
+        ii = i;
+        jj = j;
+        console.log('get tickets ', userMail, str, i, j);
+        mode = str;
         $.ajax({
           url: "functions.php",
           type: "POST",
@@ -240,13 +244,25 @@ if (!isset($_SESSION['email'])) {
             api: "getTickets"
           }
         }).done(function(evt) {
+          i = ii;
+          j = jj;
+          console.log('get tickets ', userMail, mode, i, j);
+          full = true;
+
+          if (mode === "single") {
+            console.log('restrict output');
+            full = false;
+          }
+
+
           myReservedTickets = new Array();
           myTickets = new Array();
           var tickets = JSON.parse(evt);
           console.log('--tickets updated:', tickets);
           var npurchased = 0;
           var nreserved = 0;
-          $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
+          if (full)
+            $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
           if (tickets !== "null") {
             // console.log(evt);
             var str, converted;
@@ -263,33 +279,47 @@ if (!isset($_SESSION['email'])) {
                   npurchased++;
 
                   if (userMail === tickets[ind]['owner_email']) {
-                    $(str).removeClass('free');
-                    $(str).removeClass('btn');
-                    $(str).addClass('purchased');
+                    if (full) {
+                      $(str).removeClass('free');
+                      $(str).removeClass('btn');
+                      $(str).addClass('purchased');
+                    }
+
                     myTickets.push(tickets[ind]);
 
                   } else {
-                    $(str).removeClass('free');
-                    $(str).removeClass('btn');
-                    $(str).addClass('purchased');
+                    console.log("row: " + tickets[ind].row + " col: " + converted + " i: " + i + " j: " + j);
+
+                    if (full || (j == tickets[ind].row && i == converted)) {
+                      console.log(true);
+                      $(str).removeClass('free');
+                      $(str).removeClass('btn');
+                      $(str).addClass('purchased');
+                    }
                   }
                   break;
 
                 case "reserved":
-                  nreserved++;
+
                   if (userMail) { //reserved by me
                     if (userMail === tickets[ind]['owner_email']) {
                       $(str).removeClass('free');
                       $(str).addClass('reserved-by-me');
                       myReservedTickets.push(tickets[ind]);
-
+                      nreserved++;
                     } else {
-                      $(str).removeClass('free');
-                      $(str).addClass('reserved');
+                      if (full) {
+                        $(str).removeClass('free');
+                        $(str).addClass('reserved');
+                        nreserved++;
+                      }
                     }
                   } else {
-                    $(str).removeClass('free');
-                    $(str).addClass('reserved');
+                    if (full) {
+                      $(str).removeClass('free');
+                      $(str).addClass('reserved');
+                      nreserved++;
+                    }
                   }
 
                   break;
@@ -349,7 +379,9 @@ if (!isset($_SESSION['email'])) {
             if (res['error'] === "timeout expired") {
               window.location = 'login.php?msg=SessionTimeOut';
             }
-
+            mail = res['email']
+            //getTickets(mail, "single", true);
+            getTickets(mail, "single", i, j);
           }
           if (res['done']) {
 
@@ -358,11 +390,11 @@ if (!isset($_SESSION['email'])) {
             $('#alert').removeClass('alert-danger').addClass('alert-success');
             $('#alert').finish();
             $('#alert').fadeIn().delay(1000).fadeOut();
-
+            mail = res['email'];
+            getTickets(mail, "single", i, j);
 
           }
-          mail = res['email']
-          getTickets(mail);
+
           //return JSON.parse(evt);
           //console.log(JSON.parse(evt));
         })

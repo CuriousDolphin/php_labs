@@ -103,6 +103,7 @@ if (isset($_POST['api'])) {
         if (!mysqli_commit($db)) { //COMMIT
           throw new Exception("Error commit");
         }
+        $email = $_SESSION['email'];
         mysqli_autocommit($db, true);
         mysqli_close($db);
         $response['done']  = "Done! Purchase correctly elaborated";
@@ -196,6 +197,7 @@ if (isset($_POST['api'])) {
                   $response['email']  = $email;
                   $response['row'] = $row;
                   $response['place'] = $label;
+
                   echo json_encode($response);
                 }
 
@@ -216,12 +218,14 @@ if (isset($_POST['api'])) {
           if (!mysqli_commit($db)) { //COMMIT
             throw new Exception("Error commit");
           }
+
           mysqli_autocommit($db, true);
           mysqli_close($db);
           $response['done']  = "reservation correctly inserted";
           $response['email']  = $email;
           $response['row'] = $row;
           $response['place'] = $label;
+
           echo json_encode($response);
         }
       } catch (Exception $e) {
@@ -241,6 +245,13 @@ if (isset($_POST['api'])) {
       break;
   }
 }
+
+
+//signup
+if (isset($_post['app-signup'])) {
+  $db = dbConnection();
+}
+
 // login user
 if (isset($_POST['app_login'])) {
   $db = dbConnection();
