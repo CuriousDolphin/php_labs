@@ -69,9 +69,12 @@ if (isset($_POST['api'])) {
             if ($res->num_rows > 0) { //posto prenotato o comprato
               $tic = mysqli_fetch_array($res, MYSQLI_ASSOC);
               $status = $tic['status'];
-
+              $owner = $tic['owner_email'];
               if (strtolower($status) === "purchased")
                 throw new Exception("Error seat already purchased $row");
+
+              if (strtolower($status) === "reserved" && $owner != $_SESSION['email'])
+                throw new Exception("Error seat already reserved by another user $row");
 
               //update biglietto
               $query = "UPDATE tickets SET owner_email = '$email' , status ='purchased' WHERE row='$row' and place='$letter'";
@@ -79,23 +82,26 @@ if (isset($_POST['api'])) {
               if (!$res) { // QUERY
                 throw new Exception("Error query update place $query");
               }
-              if (!mysqli_commit($db)) { //COMMIT
+              /* if (!mysqli_commit($db)) { //COMMIT
                 throw new Exception("Error commit");
-              }
+              } */
             } else { //POSTO LIBERO,LO compro
               $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$letter', 'purchased', '$email')";
               $res = mysqli_query($db, $query);
               if (!$res) { // QUERY
                 throw new Exception("Error query insert place $query");
               }
-              if (!mysqli_commit($db)) { //COMMIT
+              /* if (!mysqli_commit($db)) { //COMMIT
                 throw new Exception("Error commit");
-              }
+              } */
             }
-            mysqli_autocommit($db, true);
+            // mysqli_autocommit($db, true);
           } else {
             throw new Exception("bad input data");
           }
+        }
+        if (!mysqli_commit($db)) { //COMMIT
+          throw new Exception("Error commit");
         }
         mysqli_autocommit($db, true);
         mysqli_close($db);
@@ -104,6 +110,10 @@ if (isset($_POST['api'])) {
         echo json_encode($response);
       } catch (Exception $e) {
         mysqli_rollback($db);
+        $email = $_SESSION['email'];
+        $query = "DELETE FROM tickets where owner_email='$email' and status='reserved'"; //rollback di tutte le mie prenotazioni
+        $res = mysqli_query($db, $query);
+        mysqli_commit($db);
         mysqli_autocommit($db, true);
         mysqli_close($db);
         $error = $e->getMessage();
