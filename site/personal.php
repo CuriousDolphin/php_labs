@@ -1,5 +1,6 @@
 <?php
 include('functions.php');
+$errors = array();
 checkHttps();
 checkCookie();
 if (!isset($_SESSION['email'])) {
@@ -44,7 +45,7 @@ if (!isset($_SESSION['email'])) {
         <div class="card-header">
           <h5 class="card-title">Today Trip
             <?php {
-              echo "<button type='button' class='btn btn-link'><a class='icon-white' href='personal.php'><i class='fas fa-sync-alt'></i></a></button> ";
+              echo "<button type='button' class='btn btn-info reload' id='reload'  ><a class='icon-white' ><i class='fas fa-sync-alt'></i></a></button> ";
             } ?>
 
           </h5>
@@ -163,12 +164,22 @@ if (!isset($_SESSION['email'])) {
 
       </div>
       <div class='alert' role='alert' id='alert'></div>
-
+      <?php
+      if (isset($_GET['error']))
+        echo "<div class='alert alert-danger' role='alert' id='getAlert'>" . $_GET['error'] . "</div>";
+      if (isset($_GET['done']))
+        echo "<div class='alert alert-success' role='alert' id='getAlert'>" . $_GET['done'] . "</div>";
+      ?>
     </div>
     <script type="text/javascript">
       myReservedTickets = new Array();
       myTickets = new Array();
-      console.log('myReservedTickets', myReservedTickets);
+      $('#reload').click(function() {
+        window.location = 'personal.php';
+      });
+
+
+      $('#getAlert').delay(2000).fadeOut();
       $('.clickable').click(
         function(event) {
 
@@ -189,12 +200,25 @@ if (!isset($_SESSION['email'])) {
       )
 
       $('#buy').click(function() {
-          if (myReservedTickets.length < 0) {
+          /* if (myReservedTickets.length <= 0) {
             $('#alert').text("You dont have reserved tickets");
             $('#alert').removeClass('alert-success').addClass('alert-danger');
             $('#alert').finish().fadeIn().delay(1000).fadeOut();
             return;
-          }
+          } */
+          myReservedTickets = new Array();
+          $('.reserved-by-me').each(
+            function() {
+              console.log('reserved by me_>', this.id);
+              if (!this.id)
+                return;
+              ticket = new Object;
+              ticket['row'] = this.id[1];
+              ticket['place'] = String.fromCharCode(Number(this.id[3]) + 65);
+              // ticket['status'] = "purchased";
+              myReservedTickets.push(ticket);
+            }
+          )
           console.log('invio al server', myReservedTickets);
           $.ajax({
             url: "functions.php",
@@ -211,20 +235,24 @@ if (!isset($_SESSION['email'])) {
               $('#alert').text(res['error']);
               $('#alert').removeClass('alert-success').addClass('alert-danger');
               $('#alert').finish().fadeIn().delay(1000).fadeOut();
-              /* if (res['error'] = "timeout expired") {
+              if (res['error'] === "timeout expired") {
                 window.location = 'login.php?msg=SessionTimeOut';
-              } */
+              }
+              //document.cookie = "message=" + res['error'];
+              window.location = 'personal.php?error=' + res['error'];
 
             }
             if (res['done']) {
               console.log('done! purchased elaborated');
+              //  document.cookie = "message=" + res['done'];
+              window.location = 'personal.php?done=' + res['done'];
               $('#alert').text(res['done']);
               $('#alert').removeClass('alert-danger').addClass('alert-success');
               $('#alert').finish();
               $('#alert').fadeIn().delay(1000).fadeOut();
             }
             mail = res['email']
-            getTickets(mail);
+            //getTickets(mail);
           })
 
         }
@@ -232,10 +260,137 @@ if (!isset($_SESSION['email'])) {
 
       );
 
-      function getTickets(userMail, str, i, j) {
-        ii = i;
-        jj = j;
-        console.log('get tickets ', userMail, str, i, j);
+
+      function reserve(i, j) {
+        console.log(i, j);
+
+        return $.ajax({
+          url: "functions.php",
+          type: "POST",
+          data: {
+            api: "reserve",
+            place: i,
+            row: j,
+          }
+        }).done(function(evt) {
+          var free = Number($('#n-free').html());
+          var reserved = Number($('#n-reserved').html());
+          var purchased = Number($('#n-purchased').html());
+          res = JSON.parse(evt);
+          console.log(res);
+          if (res['error']) {
+            console.log('error->', res['error']);
+
+            str = "#i" + j + "j" + i;
+            $(str).removeClass("reserved-by-me").addClass("free");
+            if (res['error'] === "ticket already purchased") {
+              $(str).removeClass("reserved-by-me").removeClass("free").addClass("purchased");
+              console.log('siamooo dentroooooo');
+              //incremento purchased
+              free -= 1
+              purchased += 1
+              $('#n-free').html(free);
+              $('#n-purchased').html(purchased);
+
+            }
+            $('#alert').text(res['error']);
+            $('#alert').removeClass('alert-success').addClass('alert-danger');
+            $('#alert').finish().fadeIn().delay(1000).fadeOut();
+            //console.log('ecoooooolooo', res['error']);
+            if (res['error'] == "timeout expired") {
+              window.location = 'login.php?msg=SessionTimeOut';
+            }
+            mail = res['email']
+
+          }
+          if (res['done']) {
+            console.log('done->', res['done']);
+            str = "#i" + j + "j" + i;
+            switch (res['done']) {
+              case "reservation correctly update":
+                if ($(str).hasClass("reserved-by-me")) { //giallo->verde
+                  $(str).removeClass("reserved-by-me").addClass("free").removeClass("reserved");
+
+                  free += 1
+                  reserved -= 1
+                  $('#n-free').html(free);
+                  $('#n-reserved').html(reserved);
+
+                } else if ($(str).hasClass("reserved")) { //arancione->giallo
+                  $(str).removeClass("reserved").addClass("reserved-by-me");
+                  free -= 1
+                  reserved += 1
+                  $('#n-free').html(free);
+                  $('#n-reserved').html(reserved);
+
+                } else {
+                  free -= 1
+                  reserved += 1
+                  $('#n-free').html(free);
+                  $('#n-reserved').html(reserved);
+
+                  $(str).removeClass("free").removeClass("reserved").addClass("reserved-by-me");
+                }
+
+                break;
+
+              case "reservation correctly inserted": //giallo
+                free -= 1
+                reserved += 1
+                $('#n-free').html(free);
+                $('#n-reserved').html(reserved);
+                $(str).removeClass("free").addClass("reserved-by-me");
+                $(str).removeClass("reserved");
+                //aggiornamento stat
+                break;
+
+
+              case 'reservation deleted by user':
+                free += 1
+                reserved -= 1
+                $('#n-free').html(free);
+                $('#n-reserved').html(reserved);
+                console.log('im in exact case');
+                $(str).removeClass("reserved-by-me");
+                $(str).removeClass("reserved").addClass('free');
+                break;
+
+
+
+
+            }
+
+            console.log('done! updating seats');
+            $('#alert').text(res['row'] + res['place'] + " " + res['done']);
+            $('#alert').removeClass('alert-danger').addClass('alert-success');
+            $('#alert').finish();
+            $('#alert').fadeIn().delay(1000).fadeOut();
+            mail = res['email'];
+
+
+            $('#buy').removeClass('hidden');
+
+            cartString = ''
+
+
+            $('.reserved-by-me').each(
+              function(evt) {
+                cartString += this.id[1] + String.fromCharCode(Number(this.id[3]) + 65) + " ";
+              }
+            )
+            $('#reservation-list').html(cartString);
+
+
+
+          }
+
+        })
+
+      }
+
+      function getTickets(userMail) { //get all tickets AJAX
+
+        //  console.log('get tickets ', userMail, str, i, j);
         mode = str;
         $.ajax({
           url: "functions.php",
@@ -244,15 +399,7 @@ if (!isset($_SESSION['email'])) {
             api: "getTickets"
           }
         }).done(function(evt) {
-          i = ii;
-          j = jj;
-          console.log('get tickets ', userMail, mode, i, j);
-          full = true;
 
-          if (mode === "single") {
-            console.log('restrict output');
-            full = false;
-          }
 
 
           myReservedTickets = new Array();
@@ -261,15 +408,13 @@ if (!isset($_SESSION['email'])) {
           console.log('--tickets updated:', tickets);
           var npurchased = 0;
           var nreserved = 0;
-          if (full)
-            $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
+
+
+          $('td').removeClass('reserved').removeClass('reserved-by-me').removeClass('purchased').addClass('free');
           if (tickets !== "null") {
             // console.log(evt);
             var str, converted;
-
             var ntot = tickets.lenght;
-
-
             for (var ind in tickets) {
               converted = tickets[ind].place.toString().toLowerCase().charCodeAt(0) - 97;
               /* USED TO CONVERT CHAR TO NUMBER */
@@ -279,19 +424,19 @@ if (!isset($_SESSION['email'])) {
                   npurchased++;
 
                   if (userMail === tickets[ind]['owner_email']) {
-                    if (full) {
-                      $(str).removeClass('free');
-                      $(str).removeClass('btn');
-                      $(str).addClass('purchased');
-                    }
+
+                    $(str).removeClass('free');
+                    $(str).removeClass('btn');
+                    $(str).addClass('purchased');
+
 
                     myTickets.push(tickets[ind]);
 
                   } else {
-                    console.log("row: " + tickets[ind].row + " col: " + converted + " i: " + i + " j: " + j);
 
-                    if (full || (j == tickets[ind].row && i == converted)) {
-                      console.log(true);
+
+                    if (full) { //aggiornamento singolo
+
                       $(str).removeClass('free');
                       $(str).removeClass('btn');
                       $(str).addClass('purchased');
@@ -308,18 +453,18 @@ if (!isset($_SESSION['email'])) {
                       myReservedTickets.push(tickets[ind]);
                       nreserved++;
                     } else {
-                      if (full) {
-                        $(str).removeClass('free');
-                        $(str).addClass('reserved');
-                        nreserved++;
-                      }
-                    }
-                  } else {
-                    if (full) {
+
                       $(str).removeClass('free');
                       $(str).addClass('reserved');
                       nreserved++;
+
                     }
+                  } else {
+
+                    $(str).removeClass('free');
+                    $(str).addClass('reserved');
+                    nreserved++;
+
                   }
 
                   break;
@@ -334,7 +479,7 @@ if (!isset($_SESSION['email'])) {
             str += " " + ticket['row'] + ticket['place'];
           })
           $('#purchase-list').html(str);
-          console.log('myPurchasedTickets updates', myTickets);
+          //console.log('myPurchasedTickets updates', myTickets);
 
 
           str = '';
@@ -354,51 +499,6 @@ if (!isset($_SESSION['email'])) {
           $('#n-reserved').html(nreserved.toString());
           $('#n-purchased').html(npurchased.toString());
         });
-      }
-
-      function reserve(i, j) {
-        console.log(i, j);
-
-        return $.ajax({
-          url: "functions.php",
-          type: "POST",
-          data: {
-            api: "reserve",
-            place: i,
-            row: j,
-          }
-        }).done(function(evt) {
-          console.log(evt);
-          res = JSON.parse(evt);
-          if (res['error']) {
-            console.log('error', res['error']);
-            $('#alert').text(res['error']);
-            $('#alert').removeClass('alert-success').addClass('alert-danger');
-            $('#alert').finish().fadeIn().delay(1000).fadeOut();
-            console.log('ecoooooolooo', res['error']);
-            if (res['error'] === "timeout expired") {
-              window.location = 'login.php?msg=SessionTimeOut';
-            }
-            mail = res['email']
-            //getTickets(mail, "single", true);
-            getTickets(mail, "single", i, j);
-          }
-          if (res['done']) {
-
-            console.log('done! updating seats');
-            $('#alert').text(res['row'] + res['place'] + " " + res['done']);
-            $('#alert').removeClass('alert-danger').addClass('alert-success');
-            $('#alert').finish();
-            $('#alert').fadeIn().delay(1000).fadeOut();
-            mail = res['email'];
-            getTickets(mail, "single", i, j);
-
-          }
-
-          //return JSON.parse(evt);
-          //console.log(JSON.parse(evt));
-        })
-
       }
     </script>
 </body>

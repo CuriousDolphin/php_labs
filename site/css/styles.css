@@ -82,6 +82,12 @@
 .navbar{
   z-index: 99999;
 }
+.reload{
+  padding:0;
+  width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
 .reserved{
   background-color: #ffc107 ;
 }
@@ -183,4 +189,15 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+}
+.form-card{
+  border-radius: 25px;
+  padding:20px;
+}
+.logo{
+      font-size: 64px;
+    margin: 10px;
+    margin: auto;
+    margin-bottom: 20px;
+    color: #007bff;
 }

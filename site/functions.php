@@ -3,6 +3,12 @@ session_start();
 $GLOBALS['col'] = 6;
 $GLOBALS['row'] = 10;
 $errors = array();
+
+
+
+
+
+
 // AJAX API
 if (isset($_POST['api'])) {
   $cmd = $_POST['api'];
@@ -40,6 +46,12 @@ if (isset($_POST['api'])) {
         exit();
       }
       $tickets = json_decode($_POST['tickets'], true);
+      if (!$tickets) {
+        $response['error']  = "empty data";
+        $response['email']  = $_SESSION['email'];
+        echo json_encode($response);
+        exit();
+      };
       $db = dbConnection();
       mysqli_autocommit($db, false);
       $maxRow = $GLOBALS['row'];
@@ -74,7 +86,7 @@ if (isset($_POST['api'])) {
                 throw new Exception("Error seat already purchased $row");
 
               if (strtolower($status) === "reserved" && $owner != $_SESSION['email'])
-                throw new Exception("Error seat already reserved by another user $row");
+                throw new Exception("Error seat $letter $row already reserved by another user ");
 
               //update biglietto
               $query = "UPDATE tickets SET owner_email = '$email' , status ='purchased' WHERE row='$row' and place='$letter'";
@@ -82,25 +94,14 @@ if (isset($_POST['api'])) {
               if (!$res) { // QUERY
                 throw new Exception("Error query update place $query");
               }
-              /* if (!mysqli_commit($db)) { //COMMIT
-                throw new Exception("Error commit");
-              } */
-            } else { //POSTO LIBERO,LO compro
-              $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$letter', 'purchased', '$email')";
-              $res = mysqli_query($db, $query);
-              if (!$res) { // QUERY
-                throw new Exception("Error query insert place $query");
-              }
-              /* if (!mysqli_commit($db)) { //COMMIT
-                throw new Exception("Error commit");
-              } */
+            } else { //POSTO LIBERO AZIONE ANNULLATA,non si possono comprare dei posti se non sono stati prima prenotat
+              throw new Exception("Reservation not found");
             }
-            // mysqli_autocommit($db, true);
           } else {
             throw new Exception("bad input data");
           }
         }
-        if (!mysqli_commit($db)) { //COMMIT
+        if (!mysqli_commit($db)) { //COMMIT per tutte le modifiche
           throw new Exception("Error commit");
         }
         $email = $_SESSION['email'];
@@ -171,7 +172,7 @@ if (isset($_POST['api'])) {
 
               case 'reserved':
                 $email = mysqli_real_escape_string($db, $_SESSION['email']);
-                if ($res['owner_email'] !== $email) {
+                if ($res['owner_email'] !== $email) { //se non è prenotato da me,lo aggiorno e lo prenoto
                   $query = "UPDATE tickets SET owner_email = '$email' , status ='reserved' WHERE row='$row' and place='$label'";
                   if (!mysqli_query($db, $query)) { // QUERY
                     throw new Exception("Error Query update $query");
@@ -188,7 +189,7 @@ if (isset($_POST['api'])) {
                 } else {
                   $query = "DELETE FROM tickets WHERE row='$row' and place='$label'";
                   if (!mysqli_query($db, $query)) { // QUERY
-                    throw new Exception("Error Query delete reservation");
+                    throw new Exception("Error Query update reservation");
                   }
                   if (!mysqli_commit($db)) { //COMMIT
                     throw new Exception("Error commit");
@@ -247,17 +248,13 @@ if (isset($_POST['api'])) {
 }
 
 
-//signup
-if (isset($_post['app-signup'])) {
-  $db = dbConnection();
-}
 
 // login user
 if (isset($_POST['app_login'])) {
   $db = dbConnection();
   $email = mysqli_real_escape_string($db, $_POST['email']);
   /* SANITIZE STRING */
-  $password = $_POST['password'];
+  $password = mysqli_real_escape_string($db, $_POST['password']);
 
   if (empty($password)) {
     array_push($errors, "Password is required");
@@ -279,6 +276,56 @@ if (isset($_POST['app_login'])) {
   }
   mysqli_close($db);
 }
+
+//signup
+if (isset($_POST['app_signup'])) {
+  $errors = array();
+
+
+  if (isset($_POST['email']) && isset($_POST['password'])) {
+    try {
+      $db = dbConnection();
+      $email = strtolower(mysqli_real_escape_string($db, $_POST['email']));
+      $password = mysqli_real_escape_string($db, $_POST['password']);
+
+      //check email and password
+      if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception("Email is not valid");
+      }
+
+      if (!preg_match("/(?=.*[a-z])(?=.*[A-Z0-9])/", $password) || empty($password)) {
+        throw new Exception("password is not valid");
+      }
+
+      $query = "SELECT * FROM users WHERE email='$email'";
+      $results = mysqli_query($db, $query);
+      if (mysqli_num_rows($results) > 0) {
+        throw new Exception("User already exist in db!");
+      } else {
+
+        $hash = md5($password);
+        $query = "INSERT INTO Users(id, email, password) VALUES('', '$email', '$hash')";
+        if (!mysqli_query($db, $query)) { // QUERY
+          throw new Exception("Error insert user in db");
+        }
+        mysqli_close($db);
+        $_SESSION['email'] = $email;
+        $_SESSION['time'] = time();
+        header('location: personal.php?done=SignupSuccess!');
+      }
+    } catch (Exception $e) {
+      $error = $e->getMessage();
+      mysqli_close($db);
+      array_push($errors, $error);
+      return false;
+      // header('location: signup.php');
+    }
+  } else {
+    array_push($errors, "error");
+    // header('location: signup.php');
+  }
+}
+
 
 function getTickets()
 {

@@ -38,18 +38,21 @@ if (isset($_SESSION['email'])) {
 
 
     <div class="container form-container">
-      <form method="post" action="login.php">
-        <div class="form-group">
-          <label for="email">Email address</label>
-          <input type="email" class="form-control" name="email" placeholder="Enter email" required>
+      <div class="card form-card">
+        <i class="fas fa-plane-departure logo"></i>
+        <form method="post" action="login.php">
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" class="form-control" name="email" placeholder="Enter email" required>
 
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" class="form-control" name="password" placeholder="Insert your password" required />
-        </div>
-        <button type="submit" class="btn btn-primary" name="app_login" id="app_login">Submit</button>
-      </form>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" name="password" placeholder="Insert your password" required />
+          </div>
+          <button type="submit" class="btn btn-primary" name="app_login" id="app_login">Submit</button>
+        </form>
+      </div>
       <div class="error-container container">
         <!-- ERRORS -->
         <?php if (isset($_GET['msg'])) {
@@ -67,6 +70,7 @@ if (isset($_SESSION['email'])) {
       </div>
     </div>
   </div>
+
   </div>
 
 </body>
