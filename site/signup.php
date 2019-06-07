@@ -20,7 +20,7 @@ checkCookie();
 
 
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-   <script src="https://code.jquery.com/jquery-3.1.1.min.js">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js">
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
@@ -29,7 +29,7 @@ checkCookie();
 
 <body>
   <noscript>
-    Javascript is not enabled. Please, enable it!
+    this site can't work without Javascript
   </noscript>
   <?php include('header.php') ?>
   <div class="main-container">
@@ -40,7 +40,7 @@ checkCookie();
       <div class="card form-card">
         <i class="fas fa-plane-departure logo"></i>
         <h2>Insert your data to signup</h2>
-        <form method="post" action="signup.php" >
+        <form method="post" action="signup.php">
           <div class="form-group">
             <label for="email">Email address</label>
             <input type="email" class="form-control" name="email" placeholder="Enter email" required>
@@ -49,6 +49,7 @@ checkCookie();
           <div class="form-group">
             <label for="password">Password</label>
             <input oninput="check(this)" name="password" type="password" class="form-control" name="password" id="password" placeholder="Insert your password" required />
+            <p>The password must contain at least one lowercase char and one number OR one uppercase char</p>
             <br>
           </div>
 
@@ -59,7 +60,7 @@ checkCookie();
         </form>
       </div>
 
-      <div class="error-container container" >
+      <div class="error-container container">
         <!-- ERRORS -->
 
 
@@ -81,17 +82,18 @@ checkCookie();
 </body>
 <script type="text/javascript">
   $('#getAlert').delay(2000).fadeOut();
-  
+
   function check(input) {
     str = "(?=.*[a-z])(?=.*[A-Z0-9])"
     var regexp_psw = new RegExp(str);
     if (!regexp_psw.test(input.value.toString())) {
       input.setCustomValidity("The password must contain at least one lowercase char and one number OR one uppercase char");
-   } else {
+    } else {
       // input is fine -- reset the error message
       input.setCustomValidity("");
     }
   }
+
   function validate(event) {
     var psw = $("#password").val();
 

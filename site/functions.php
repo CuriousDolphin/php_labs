@@ -1,13 +1,29 @@
 <?php
 session_start();
-$GLOBALS['col'] = 6;
-$GLOBALS['row'] = 10;
 $errors = array();
-
-
-
-
-
+/* CAMBIARE QUI ROW E COL */
+$selectRow = 10;
+$selectCol = 6;
+$fp = fopen('gridSize', 'r');
+$tmp = fscanf($fp, "%d_%d");
+$storedCol = $tmp[0];
+$storedRow = $tmp[1];
+//echo $storedCol . "_" . $storedRow;
+if (($storedCol != $selectCol) || ($selectRow != $storedRow)) { //valori input diversi da valori nel file,deleto tutto
+  // echo " non sono dove devo essere";
+  $query = "DELETE FROM tickets";
+  $db = dbConnection();
+  if (!mysqli_query($db, $query))
+    //echo "suuuperr errrore ";
+    mysqli_close($db);
+  $GLOBALS['col'] = $selectCol;
+  $GLOBALS['row'] = $selectRow;
+  $fp = fopen('gridSize', 'w');
+  fwrite($fp, $selectCol . "_" . $selectRow);
+} else {
+  $GLOBALS['col'] = $selectCol;
+  $GLOBALS['row'] = $selectRow;
+}
 
 // AJAX API
 if (isset($_POST['api'])) {
@@ -289,11 +305,11 @@ if (isset($_POST['app_signup'])) {
       $password = mysqli_real_escape_string($db, $_POST['password']);
 
       //check email and password
-      if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      if (!filter_var($email, FILTER_VALIDATE_EMAIL) ||  strlen($email) > 50) {
         throw new Exception("Email is not valid");
       }
 
-      if (!preg_match("/(?=.*[a-z])(?=.*[A-Z0-9])/", $password) || empty($password)) {
+      if (!preg_match("/(?=.*[a-z])(?=.*[A-Z0-9])/", $password) || empty($password) || strlen($password) > 50) {
         throw new Exception("password is not valid");
       }
 

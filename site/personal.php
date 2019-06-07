@@ -3,6 +3,7 @@ include('functions.php');
 $errors = array();
 checkHttps();
 checkCookie();
+
 if (!isset($_SESSION['email'])) {
   header('location: index.php');
 }
@@ -33,7 +34,7 @@ if (!isset($_SESSION['email'])) {
 
 <body>
   <noscript>
-    Javascript is not enabled. Please, enable it!
+    Javascript is not enabled. Please, enable it! this site can't work without Javascript
   </noscript>
   <?php include('header.php') ?>
   <div class="main-container">
@@ -101,7 +102,9 @@ if (!isset($_SESSION['email'])) {
 
           for ($i = 0; $i < $row; $i++) {
             echo "<tr name='row' class='row'>";
-            for ($j = 0; $j < $col; $j++) {
+            for ($j = -1; $j < $col; $j++) {
+              if ($j === -1) echo "<td class='vertical-label'>$i</td>";
+              else
               if (isset($purchased[$i][$j])) {
                 echo "<td class='cell ml purchased' id='i{$i}j{$j}'</td>"; //purchased
               } else {

@@ -30,7 +30,7 @@ if (isset($_SESSION['email'])) {
 
 <body>
   <noscript>
-    Javascript is not enabled. Please, enable it!
+    Javascript is not enabled. Please, this site can't work without Javascript
   </noscript>
   <?php include('header.php') ?>
   <div class="main-container">
