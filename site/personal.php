@@ -116,9 +116,9 @@ if (!isset($_SESSION['email'])) {
 
                     default:
                       if ($reserved[$i][$j] === $myMail) {
-                        echo "<td class='cell ml reserved-by-me clickable btn ' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved by me -> yellow 
+                        echo "<td class='cell ml reserved-by-me clickable btn '  id='i{$i}j{$j}'</td>"; //reserved by me -> yellow 
 
-                      } else echo "<td class='cell ml reserved clickable btn ' (click)='reserve()' id='i{$i}j{$j}'</td>"; //reserved but not by me
+                      } else echo "<td class='cell ml reserved clickable btn '  id='i{$i}j{$j}'</td>"; //reserved but not by me
 
                       break;
                   }
@@ -183,7 +183,8 @@ if (!isset($_SESSION['email'])) {
 
 
       $('#getAlert').delay(2000).fadeOut();
-      $('.clickable').click(
+
+      $('.clickable').click( // RESERVE
         function(event) {
 
           id = event.target.id;

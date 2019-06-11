@@ -2,6 +2,9 @@
 session_start();
 $errors = array();
 /* CAMBIARE QUI ROW E COL */
+$GLOBALS['col'] = 6;
+$GLOBALS['row'] = 10;
+/*
 $selectRow = 10;
 $selectCol = 6;
 $fp = fopen('gridSize', 'r');
@@ -23,7 +26,7 @@ if (($storedCol != $selectCol) || ($selectRow != $storedRow)) { //valori input d
 } else {
   $GLOBALS['col'] = $selectCol;
   $GLOBALS['row'] = $selectRow;
-}
+}*/
 
 // AJAX API
 if (isset($_POST['api'])) {
@@ -268,7 +271,7 @@ if (isset($_POST['api'])) {
 // login user
 if (isset($_POST['app_login'])) {
   $db = dbConnection();
-  $email = mysqli_real_escape_string($db, $_POST['email']);
+  $email = strtolower(mysqli_real_escape_string($db, $_POST['email']));
   /* SANITIZE STRING */
   $password = mysqli_real_escape_string($db, $_POST['password']);
 
@@ -305,11 +308,11 @@ if (isset($_POST['app_signup'])) {
       $password = mysqli_real_escape_string($db, $_POST['password']);
 
       //check email and password
-      if (!filter_var($email, FILTER_VALIDATE_EMAIL) ||  strlen($email) > 50) {
+      if (!filter_var($email, FILTER_VALIDATE_EMAIL) ||  strlen($email) > 50 || strlen($email) < 3) {
         throw new Exception("Email is not valid");
       }
 
-      if (!preg_match("/(?=.*[a-z])(?=.*[A-Z0-9])/", $password) || empty($password) || strlen($password) > 50) {
+      if (!preg_match("/(?=.*[a-z])(?=.*[A-Z0-9])/", $password) || empty($password) || strlen($password) > 50 || strlen($password) < 2) {
         throw new Exception("password is not valid");
       }
 

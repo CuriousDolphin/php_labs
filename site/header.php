@@ -5,7 +5,7 @@
 
     if (isset($_SESSION['email'])) {
       $mail = $_SESSION['email'];
-      echo "<p>$mail</p>";
+      echo "<p>" . strip_tags($mail) . "</p>";
       if (isset($_SESSION['time'])) {
         $time = $_SESSION['time'];
 
