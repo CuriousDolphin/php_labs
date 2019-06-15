@@ -113,8 +113,12 @@ if (isset($_POST['api'])) {
               if (!$res) { // QUERY
                 throw new Exception("Error query update place $query");
               }
-            } else { //POSTO LIBERO AZIONE ANNULLATA,non si possono comprare dei posti se non sono stati prima prenotat
-              throw new Exception("Reservation not found");
+            } else { //POSTO LIBERO,LO compro
+              $query = "INSERT INTO Tickets(id, row, place, status, owner_email) VALUES('', '$row', '$letter', 'purchased', '$email')";
+              $res = mysqli_query($db, $query);
+              if (!$res) { // QUERY
+                throw new Exception("Error query insert place $query");
+              }
             }
           } else {
             throw new Exception("bad input data");
